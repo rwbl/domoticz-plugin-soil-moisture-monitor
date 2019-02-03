@@ -8,6 +8,8 @@ The Tinkerforge moisture bricklet is connected to a Tinkerforge master brick wit
 The moisture value is converted to a range 0(dry) - 100(saturated) and displayed in a Tinkerforge segment display 4x7.
 In addition, a Tinkerforge rgb led bricklet indicates the state red(dry), yellow(irrigation advice), green(saturated).
 
+![domoticz-tinkerforge-soilmoisturemonitor-plugin-p](https://user-images.githubusercontent.com/47274144/52175085-8fa85300-279e-11e9-8bd5-dc5ab34cc11b.png)
+
 ## Hardware Parts
 * Raspberry Pi 3B+
 * Tinkerforge Master Brick
@@ -114,6 +116,8 @@ Check in the Domoticz log as error message Python script at the line where the n
 
 In Domoticz Web UI, select tab Setup > Hardware and add the new hardware Soil Moisture Monitor.
 The initial check interval is set at 60 seconds. This is a good value for testing, but for finalversion set tohigher value like once per hour (3600 seconds).
+
+![domoticz-tinkerforge-soilmoisturemonitor-plugin-dh](https://user-images.githubusercontent.com/47274144/52175083-8fa85300-279e-11e9-953f-52f0caaf4e5d.png)
 
 ## Add Hardware - Check the Domoticz Log
 After adding,ensure to check the Domoticz Log (Domoticz Web UI, select tab Setup > Log)
