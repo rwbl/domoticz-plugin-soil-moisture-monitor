@@ -1,6 +1,6 @@
 # Objectives
-* To measure the soil moisture of a plant, display the value in Domoticz, in a Segment Display 4x7 and a RGB LED indicator.
-* To learn how to write generic Python plugin(s) for the Domoticz Home Automation system communicating with [Tinkerforge](http://www.tinkerforge.com) Building Blocks.
+* To measure the soil moisture of a plant, display the value in Domoticz Home Automation System, in a TinkerForge segment display 4x7 and TinkerForge RGB LED indicator.
+* To learn how to write generic Python plugin(s) for the Domoticz Home Automation System communicating with [Tinkerforge](http://www.tinkerforge.com) Building Blocks.
 
 ## Solution
 A Domoticz Python plugin "Soil Moisture Monitor" with a soil moisture monitor device obtaining the moisture value from a Tinkerforge moisture bricklet.
