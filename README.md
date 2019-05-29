@@ -2,11 +2,15 @@
 * To measure the soil moisture of a plant, display the value in Domoticz, in a Tinkerforge Segment Display 4x7 and a Tinkerforge RGB LED indicator.
 * To learn how to write generic Python plugin(s) for the Domoticz Home Automation system communicating with [Tinkerforge](http://www.tinkerforge.com) Building Blocks.
 
+![soil-moisture-monitor-p](https://user-images.githubusercontent.com/47274144/58539923-a7e22900-81f8-11e9-8c53-6ed5f8b22fed.png)
+
 ## Solution
 A Domoticz Python plugin "Soil Moisture Monitor" with a soil moisture monitor device obtaining the moisture value from a Tinkerforge moisture bricklet.
 The Tinkerforge moisture bricklet is connected to a Tinkerforge master brick with WiFi extension.
 The moisture value is converted to a range 0(dry) - 100(saturated) and displayed in a Tinkerforge segment display 4x7.
 In addition, a Tinkerforge rgb led bricklet indicates the state red(dry), yellow(irrigation advice), green(saturated).
+
+![soil-moisture-monitor-c](https://user-images.githubusercontent.com/47274144/58539921-a7499280-81f8-11e9-9586-2403e2a21529.png)
 
 See also file **domoticz-tinkerforge-soilmoisturemonitor-plugin.pdf**.
 
@@ -135,6 +139,8 @@ The initial check interval is set at 60 seconds. This is a good value for testin
 
 ## Add Hardware - Check the Domoticz Log
 After adding,ensure to check the Domoticz Log (Domoticz Web UI, select tab Setup > Log)
+![soil-moisture-monitor-h](https://user-images.githubusercontent.com/47274144/58539922-a7e22900-81f8-11e9-81f4-d54615b13dd6.png)
+
 _Example:_
 ```
 2019-05-29 08:51:45.983 Status: (Soil Moisture Monitor) Started. 
