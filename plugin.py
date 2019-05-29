@@ -36,7 +36,7 @@
         The Tinkerforge Bricklet UIDs to be defined as comma separated string of UIDs.
     </description>
     <params>
-        <param field="Address" label="Host" width="200px" required="true" default="192.168.1.112"/>
+        <param field="Address" label="Host" width="200px" required="true" default="192.168.N.NNN"/>
         <param field="Port" label="Port" width="75px" required="true" default="4223"/>
         <param field="Mode1" label="UIDs" width="200px" required="true" default="uTP,q2G,zMF"/>
         <param field="Mode4" label="LED Brightness" width="50px" required="true" default="100"/>
