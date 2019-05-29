@@ -1,6 +1,10 @@
-ToDo
+### Replace Tinkerforge Moisture Bricklet
+Connect a [Capacitive_Soil_Moisture_Sensor](https://wiki.dfrobot.com/Capacitive_Soil_Moisture_Sensor_SKU_SEN0193) to an [Analog Bricklet](https://www.tinkerforge.com/de/doc/Hardware/Bricklets/Analog_In_V3.html#analog-in-v3-bricklet).
 
-#Replace Tinkerforge Moisture Bricklet
-See
-https://www.tinkerunity.org/forum/index.php/topic,4401.msg25496.html#msg25496
-
+#### Wiring
+``` 
+Soil  Moisture Sensor=Analog Bricklet
+5V=5V Output
+GND=GND Output
+A0=VIN Input
+``` 

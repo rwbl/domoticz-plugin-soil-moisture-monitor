@@ -1,7 +1,7 @@
 # Domoticz Home Automation - SoilMoistureMonitor
 # Get the moisture from the Tinkerforge Moisture Bricklet, display in the Segment Display 4x7 Bricklet, state in RGB LED Bricklet
 # @author Robert W.B. Linn
-# @version 1.0.0 (Build 20181206)
+# @version 1.1.0 (Build 20190529)
 #
 # NOTE: after every change run
 # sudo chmod +x *.*                      
@@ -11,32 +11,36 @@
 # https://www.domoticz.com/wiki/Developing_a_Python_plugin
 
 """
-<plugin key="SoilMoistureMonitor" name="Soil Moisture Monitor" author="rwbL" version="1.0.0">
+<plugin key="SoilMoistureMonitor" name="Soil Moisture Monitor" author="rwbL" version="1.1.0">
     <description>
         <h2>Soil Moisture Monitor</h2><br/>
-        Get the moisture from the Tinkerforge Moisture Bricklet, display in the Segment Display 4x7 Bricklet, state in RGB LED Bricklet.
+        In regular intervals, obtain the moisture value from the Tinkerforge Moisture Bricklet.
+        <ul style="list-style-type:square">
+            <li>Display the value, 0 (dry) - 100 (wet), in the Tinkerforge Segment Display 4x7 Bricklet</li>
+            <li>Indicate the state, red(dry) or yellow(irrigation advice) or green(adequaly wet), in the Tinkerforge RGB LED Bricklet</li>
+            <li>Show the value (cp) and state in a Domoticz Soil Moisture device</li>
+        </ul>
         <h3>Features</h3>
         <ul style="list-style-type:square">
             <li>Moisture value</li>
             <li>00 - 09 = saturated, 10 - 19 = adequately wet, 20 - 59 = irrigation advice, 60 - 99 = irrigation, 100-200 = Dangerously dry</li>
+            <li>LED Indicator: RED=dry <20 or YELLOW=irrigation advice =>20 and <40 or GREEN=adequaly wet > 40</li>
         </ul>
-        <h3>Soil Moisture Device</h3>
+        <h3>Soil Moisture Devices</h3>
         <ul style="list-style-type:square">
-            <li>Displays soil moisture value (cp)</li>
-            <li>Displays soil moisture value in Segment Display 4x7 with values 0(dry) - 100(wet)</li>
-            <li>Indicate soil moisture level in RGB LED red(dry), yellow(irrigation advice), green(adequaly wet)</li>
+            <li>Soil Moisture Value - Soil Moisture device showing the value (cp) and advice</li>
+            <li>Soil Moisture Status - Text device to show the latest change or any error condition</li>
         </ul>
         <h3>Configuration</h3>
-        Requires the HTTP address and Port of the Master Brick WiFi Extention and the UIDs of the Tinkerforge Bricklets Moisture, Segment Display, RGB LED.
+        Requires the HTTP address and Port of the Master Brick WiFi Extention and the UIDs of the Tinkerforge Bricklets Moisture, Segment Display, RGB LED.<br/>
+        The Tinkerforge Bricklet UIDs to be defined as comma separated string of UIDs.
     </description>
     <params>
         <param field="Address" label="Host" width="200px" required="true" default="192.168.1.112"/>
         <param field="Port" label="Port" width="75px" required="true" default="4223"/>
-        <param field="Mode1" label="UID Moisture Bricklet" width="75px" required="true" default="uTP"/>
-        <param field="Mode2" label="UID Segment Bricklet" width="75px" required="true" default="q2G"/>
-        <param field="Mode3" label="UID RGB LED Bricklet" width="75px" required="true" default="zMF"/>
-        <param field="Mode4" label="RGB LED Brightness" width="75px" required="true" default="100"/>
-        <param field="Mode5" label="Check Interval (seconds)" width="75px" required="true" default="60"/>
+        <param field="Mode1" label="UIDs" width="200px" required="true" default="uTP,q2G,zMF"/>
+        <param field="Mode4" label="LED Brightness" width="50px" required="true" default="100"/>
+        <param field="Mode5" label="Polling (seconds)" width="50px" required="true" default="60"/>
         <param field="Mode6" label="Debug" width="75px">
             <options>
                 <option label="True" value="Debug" default="true"/>
@@ -59,7 +63,7 @@ import urllib.request
 from os import path
 import sys
 sys.path
-sys.path.append('/usr/lib/python3/dist-packages')
+sys.path.append('/usr/local/lib/python3.5/dist-packages')
                 
 import tinkerforge
 from tinkerforge.ip_connection import IPConnection
@@ -95,6 +99,8 @@ class BasePlugin:
         # (self.HeartbeatCounter * self.HeartbeatInterval) % int(Parameter.Mode5) = 0
         self.HeartbeatInterval = 60
         self.HeartbeatCounter = 0
+        # Flag to check if connected to the master brick
+        self.ipConnected = 0
         return
 
     def onStart(self):
@@ -107,11 +113,12 @@ class BasePlugin:
             DumpConfigToLog()
 
         if (len(Devices) == 0):
-            Domoticz.Debug("Device new Soil Moisture")
-            # myVar = Domoticz.Device(Name="myDevice", Unit=0, TypeName="", Type=0, Subtype=0, Switchtype=0, Image=0, Options={}, Used=1)
-            # Domoticz.Device(Name="Homepage Counter", Unit=1, TypeName="Custom", Options={"Custom": "1;Hits"}).Create()
-            Domoticz.Device(Name="Soil Moisture", Unit=1, TypeName="Soil Moisture").Create()
+            # Create new devices for the Soil Moisture Hardware
+            Domoticz.Debug("Creating new Devices")
+            Domoticz.Device(Name="Soil Moisture", Unit=1, TypeName="Soil Moisture", Used=1).Create()
             Domoticz.Debug("Device created: "+Devices[1].Name)
+            Domoticz.Device(Name="Status", Unit=2, TypeName="Text", Used=1).Create()
+            Domoticz.Debug("Device created: "+Devices[2].Name)
             
         Domoticz.Debug("Heartbeat set: "+Parameters["Mode5"])
         Domoticz.Heartbeat(self.HeartbeatInterval)
@@ -136,84 +143,116 @@ class BasePlugin:
 
     def onHeartbeat(self):
         self.HeartbeatCounter = self.HeartbeatCounter + 1
-        Domoticz.Log("onHeartbeat called. Counter=" + str(self.HeartbeatCounter * self.HeartbeatInterval) + " (Heartbeat=" + Parameters["Mode5"] + ")")
+        Domoticz.Debug("onHeartbeat called. Counter=" + str(self.HeartbeatCounter * self.HeartbeatInterval) + " (Heartbeat=" + Parameters["Mode5"] + ")")
+        # Flag to check if connected to the master brick
+        self.ipConnected = 0
 
         # check the heartbeatcounter against the heartbeatinterval
         if (self.HeartbeatCounter * self.HeartbeatInterval) % int(Parameters["Mode5"]) == 0:
             # Get the moisture value
-            # Create IP connection
-            ipcon = IPConnection()
+            try:
+                # Create IP connection
+                ipcon = IPConnection()
+            
+                # Create device objects using the UID as defined in the parameter Mode1
+                # The string contains multiple UIDs separated by comma (,). This enables to define more bricklets.
+                brickletUIDParam = Parameters["Mode1"]
+                Domoticz.Debug("UIDs:" + brickletUIDParam )
+                # Split the parameter string into a list of UIDs
+                brickletUIDList = brickletUIDParam.split(',')
+                # Check the list length (3 because 3 bricklet UIDs) and create the device objects
+                if len(brickletUIDList) == 3:
+                    mb = BrickletMoisture(brickletUIDList[0], ipcon)
+                    sb = BrickletSegmentDisplay4x7(brickletUIDList[1], ipcon)
+                    lb = BrickletRGBLED(brickletUIDList[2], ipcon)
 
-            # Create device objects
-            mb = BrickletMoisture(Parameters["Mode1"], ipcon)
-            sb = BrickletSegmentDisplay4x7(Parameters["Mode2"], ipcon)
-            lb = BrickletRGBLED(Parameters["Mode3"], ipcon)
+                # Connect to brickd using Host and Port
+                try:
+                    ipcon.connect(Parameters["Address"], int(Parameters["Port"]))
+                    self.ipConnected = 1
+                    Domoticz.Debug("IP Connection - OK")
+                except:
+                    Domoticz.Debug("[ERROR] IP Connection failed")
 
-            # Connect to brickd using Host and Port
-            ipcon.connect(Parameters["Address"], int(Parameters["Port"]))
+                # Don't use device before ipcon is connected
+                if self.ipConnected == 0:
+                    Devices[2].Update( nValue=0, sValue="[ERROR] Can not connect to Master Brick. Check settings, correct and restart Domoticz." )
+                    Domoticz.Log(Devices[2].sValue)
+                    return
 
-            # Don't use device before ipcon is connected
-            # Get current moisture value
-            moisturetf = mb.get_moisture_value()
-            Domoticz.Debug(Devices[1].Name + "-TF value:" + str(moisturetf) )
-            moisturedom = converttfvalue(moisturetf)
-            Domoticz.Debug(Devices[1].Name + "-Domoticz value:" + str(moisturedom) )
+                # Get current moisture value
+                moisturetf = mb.get_moisture_value()
+                Domoticz.Debug("Tinkerforge value:" + str(moisturetf) )
+                moisturedom = converttfvalue(moisturetf)
+                Domoticz.Debug("Domoticz value:" + str(moisturedom) )
 
-            # Moisture Device
-            # Update the value - only nValue is used, but mandatory to add an sValue
-            Devices[1].Update( nValue=moisturedom, sValue="0")
+                # Moisture Device and Text Device
+                # Update the value - only nValue is used, but mandatory to add an sValue
+                Devices[1].Update( nValue=moisturedom, sValue="0")
 
-            # Tinkerforge Bricklet Updates
+                # Tinkerforge Bricklet Updates
 
-            # Segment Display set the value between 0(dry) - 100(wet)
-            # Inverse the Domoticz moisure value
-            moistureled = DOMOTICZMOISTUREDRY - moisturedom
-            l = list(str(moistureled))
-            # dry
-            if  len(l) == 1:
-                segments = (DIGITS[0], DIGITS[0], DIGITS[0], DIGITS[int(l[0])])
+                # Segment Display set the value between 0(dry) - 100(wet)
+                # Inverse the Domoticz moisure value
+                moistureled = DOMOTICZMOISTUREDRY - moisturedom
+                l = list(str(moistureled))
+                # dry
+                if  len(l) == 1:
+                    segments = (DIGITS[0], DIGITS[0], DIGITS[0], DIGITS[int(l[0])])
 
-            # irrigation advice
-            if  len(l) == 2:
-                segments = (DIGITS[0], DIGITS[0], DIGITS[int(l[0])], DIGITS[int(l[1])])
+                # irrigation advice
+                if  len(l) == 2:
+                    segments = (DIGITS[0], DIGITS[0], DIGITS[int(l[0])], DIGITS[int(l[1])])
 
-            # adequate
-            if  len(l) == 3:
-                segments = (DIGITS[0], DIGITS[int(l[0])], DIGITS[int(l[1])], DIGITS[int(l[2])])
+                # adequate
+                if  len(l) == 3:
+                    segments = (DIGITS[0], DIGITS[int(l[0])], DIGITS[int(l[1])], DIGITS[int(l[2])])
 
-            # not used
-            if  len(l) == 4:
-                segments = (DIGITS[int(l[0])], DIGITS[int(l[1])], DIGITS[int(l[2])], DIGITS[int(l[3])])
+                # not used
+                if  len(l) == 4:
+                    segments = (DIGITS[int(l[0])], DIGITS[int(l[1])], DIGITS[int(l[2])], DIGITS[int(l[3])])
 
-            # Write the moisture value to the display with full brightness without colon
-            sb.set_segments(segments, 7, False)        
-            Domoticz.Debug(Devices[1].Name + "-Segment Display updated")
+                # Write the moisture value to the display with full brightness without colon
+                sb.set_segments(segments, 7, False)        
+                Domoticz.Debug("Segment Display updated")
 
-            # Set the color of the RGB LED indicator
-            # The indicator uses own scheme to keep simple: dry < 20; irrigation advice 20-40; wet > 40
-            Domoticz.Debug(Devices[1].Name + "-RGB LED updated. Brightness=" + Parameters["Mode4"])
-            lbbrightness = int(Parameters["Mode4"])
-            if lbbrightness < RGBBRIGHTNESSMIN:
-                lbbrightness = RGBBRIGHTNESSMIN
-            if lbbrightness > RGBBRIGHTNESSMAX:
-                lbbrightness = RGBBRIGHTNESSMIN
+                # Set the color of the RGB LED indicator
+                # The indicator uses own scheme to keep simple: dry < 20; irrigation advice 20-40; wet > 40
+                Domoticz.Debug("RGB LED updated. Brightness=" + Parameters["Mode4"])
+                lbbrightness = int(Parameters["Mode4"])
+                if lbbrightness < RGBBRIGHTNESSMIN:
+                    lbbrightness = RGBBRIGHTNESSMIN
+                if lbbrightness > RGBBRIGHTNESSMAX:
+                    lbbrightness = RGBBRIGHTNESSMIN
 
-            # Turn the LED on with color depending LED value - 0(dry) -100(wet)
-            # dry
-            if moistureled < 20:
-                lb.set_rgb_value(lbbrightness, 0, 0)
-            # irrigation advice 
-            if moistureled >= 20 and moistureled <= 40:
-                lb.set_rgb_value(lbbrightness, lbbrightness, 0)
-            # wet
-            if moistureled > 40:
-                lb.set_rgb_value(0, lbbrightness, 0)
+                # Turn the LED on with color RGB depending LED value - 0(dry) - 100(wet)
+                # dry = RED
+                if moistureled < 20:
+                    lb.set_rgb_value(lbbrightness, 0, 0)
+
+                # irrigation advice = YELLOW
+                if moistureled >= 20 and moistureled <= 40:
+                    lb.set_rgb_value(lbbrightness, lbbrightness, 0)
+                
+                # wet = GREEN
+                if moistureled > 40:
+                    lb.set_rgb_value(0, lbbrightness, 0)
                
-            # Disconnect
-            ipcon.disconnect()
+                # Disconnect
+                ipcon.disconnect()
 
-            # Log Message
-            Domoticz.Log(Devices[1].Name + "-Update:TF=" + str(moisturetf)+", Dom="+str(moisturedom)+", LED="+str(moistureled))
+                # Log Message
+                Devices[2].Update( nValue=0, sValue="Polling OK: TF=" + str(moisturetf)+", Dom="+str(moisturedom)+", LED="+str(moistureled))
+                Domoticz.Log(Devices[2].sValue)
+
+            except:
+                # Error
+                # Important to close the connection - if not, the plugin can not be disabled
+                if self.ipConnected == 1:
+                    ipcon.disconnect()
+            
+                Devices[2].Update( nValue=0, sValue="[ERROR] Check settings, correct and restart Domoticz." )
+                Domoticz.Log(Devices[2].sValue)
 
 global _plugin
 _plugin = BasePlugin()
