@@ -4,11 +4,13 @@
 
 ![soil-moisture-monitor-p](https://user-images.githubusercontent.com/47274144/58539923-a7e22900-81f8-11e9-8c53-6ed5f8b22fed.png)
 
+_Abbreviations_: IAQ=Indoor Air Quality, GUI=Domoticz Web UI.
+
 ## Solution
-A Domoticz Python plugin "Soil Moisture Monitor" with a soil moisture monitor device obtaining the moisture value from a Tinkerforge moisture bricklet.
-The Tinkerforge moisture bricklet is connected to a Tinkerforge master brick with WiFi extension.
-The moisture value is converted to a range 0(dry) - 100(saturated) and displayed in a Tinkerforge segment display 4x7.
-In addition, a Tinkerforge rgb led bricklet indicates the state red(dry), yellow(irrigation advice), green(saturated).
+A Domoticz Python plugin "Soil Moisture Monitor" with a soil moisture monitor device obtaining the moisture value from a Tinkerforge Moisture Bricklet.
+The Tinkerforge Moisture Bricklet is connected to a Tinkerforge Master Brick with WiFi extension.
+The moisture value is converted to a range 0 (dry) - 100 (saturated) and displayed in a Tinkerforge Segment Display 4x7 Bricklet.
+In addition, a Tinkerforge RGB LED Bricklet indicates the state red (dry), yellow (irrigation advice), green (saturated).
 
 ![soil-moisture-monitor-c](https://user-images.githubusercontent.com/47274144/58539921-a7499280-81f8-11e9-9586-2403e2a21529.png)
 
@@ -16,18 +18,19 @@ See also file **domoticz-tinkerforge-soilmoisturemonitor-plugin.pdf**.
 
 ## Hardware Parts
 * Raspberry Pi 3B+ [(Info)](https://www.raspberrypi.org)
-* Tinkerforge Master Brick 1.1 [(Info)](https://www.tinkerforge.com/en/doc/Hardware/Bricks/Master_Brick.html#master-brick)
-* Tinkerforge WIFI Master Extention 2.0 [(Info)](https://www.tinkerforge.com/en/doc/Hardware/Master_Extensions/WIFI_V2_Extension.html) 
-* Tinkerforge Moisture Bricklet 1.1 [(Info)](https://www.tinkerforge.com/en/doc/Hardware/Bricklets/Moisture.html)
-* Tinkerforge Segment Display 4X7 Bricklet 1.0 [(Info)](https://www.tinkerforge.com/en/doc/Hardware/Bricklets/Segment_Display_4x7.html)
-* Tinkerforge RGB LED Bricklet 1.0 [(Info)](https://www.tinkerforge.com/en/doc/Hardware/Bricklets/RGB_LED.html)
+**Tinkerforge**
+* Master Brick 1.1 [(Info)](https://www.tinkerforge.com/en/doc/Hardware/Bricks/Master_Brick.html#master-brick)
+* WiFi Master Extention 2.0 [(Info)](https://www.tinkerforge.com/en/doc/Hardware/Master_Extensions/WIFI_V2_Extension.html) 
+* Moisture Bricklet 1.1 [(Info)](https://www.tinkerforge.com/en/doc/Hardware/Bricklets/Moisture.html)
+* Segment Display 4X7 Bricklet 1.0 [(Info)](https://www.tinkerforge.com/en/doc/Hardware/Bricklets/Segment_Display_4x7.html)
+* RGB LED Bricklet 1.0 [(Info)](https://www.tinkerforge.com/en/doc/Hardware/Bricklets/RGB_LED.html)
 
 ### Notes about the Tinkerforge Moisture Bricklet 1.1
 1) In 2018 Tinkerforge stated: The Moisture Bricklet is discontinued and is no longer sold.
 An alternate solution could be a Tinkerforge Analog In Bricklet and a 3rd party Soil Moisture sensor.
 
 2) The Tinkerforge Moisture Bricklet Documentation describes the higher the value the more wet (with range 0 - 4095), but ...
-field tests show the other way around in a range 2200(wet) - 3400(dry) - this range depends probably on the device,it is used for this solution.
+field tests show the other way around in a range 2200 (wet) - 3400 (dry) - this range depends probably on the device,it is used for this solution.
 
 ## Software
 Versions for developing & using this plugin.
@@ -42,7 +45,7 @@ For implementing the Plugin on the Domoticz Server running on the Raspberry Pi.
 See also Appendix Python Plugin Code (well documented).
 
 ## Tinkerforge Soil Moisture Monitor Prototype
-Build the prototype by connecting the Tinkerforge building blocks (see hardware).
+Build the prototype by connecting the Tinkerforge Building Blocks (see hardware).
 Connect the Master Brick to a device running the Brick Deamon and Viewer.
 Just in a nutshell the actions taken to setup the Tinkerforge building blocks using the Tinkerforge Brick Viewer.
 * Update the devices firmware
@@ -53,7 +56,7 @@ After setting up the Tinkerforge building blocks, reset the master brick and che
 ping tf-wifi-ext-ip-address
 
 ## Domoticz Web UI's
-Open windows Domoticz Setup > Hardware, Domoticz Setup > Log, Domoticz Setup > Devices
+Open windows GUI Setup > Hardware, GUI Setup > Log, GUI Setup > Devices
 This is required to add the new hardware with its device and monitor if the plugin code is running without errors.
 
 ## Create folder
@@ -129,16 +132,16 @@ When making changes to the Python plugin code, ensure to restart Domoticz and re
 
 ## Domoticz Add Hardware Soil Moisure Monitor
 **IMPORTANT**
-Prior adding, set in the Domoticz Settings the option to allow new hardware.
+Prior adding, set GUI Stup > Settings > Hardware the option to allow new hardware.
 If this option is not enabled, no new soilmoisture device is created.
 Check in the Domoticz log as error message Python script at the line where the new device is used
 (i.e. Domoticz.Debug("Device created: "+Devices[1].Name))
 
-In Domoticz Web UI, select tab Setup > Hardware and add the new hardware Soil Moisture Monitor.
+In the GUI Setup > Hardware add the new hardware Soil Moisture Monitor.
 The initial check interval is set at 60 seconds. This is a good value for testing, but for finalversion set tohigher value like once per hour (3600 seconds).
 
 ## Add Hardware - Check the Domoticz Log
-After adding,ensure to check the Domoticz Log (Domoticz Web UI, select tab Setup > Log)
+After adding,ensure to check the Domoticz Log (GUI Setup > Log)
 ![soil-moisture-monitor-h](https://user-images.githubusercontent.com/47274144/58539922-a7e22900-81f8-11e9-81f4-d54615b13dd6.png)
 
 _Example:_
@@ -202,4 +205,3 @@ Consider to replace the Tinkerforge Moisture Bricklet as not produced anymore by
 
 ## Version
 v1.1.0 (Build 20190529)
-
